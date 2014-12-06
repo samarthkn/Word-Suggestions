@@ -1,0 +1,270 @@
+package datastruct;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Scanner;
+
+public class hashprgm<Anytype>{
+	static String pathname = "C:\\Users\\Samarth\\Documents\\utd documents\\Datastructures\\dictionary.txt";
+	static String pathname2= "C:\\Users\\Samarth\\Documents\\utd documents\\Datastructures\\nosilverbullet.txt";
+	public hashprgm( )
+ {
+     this( DEFAULT_TABLE_SIZE );
+ }
+
+ public hashprgm( int size )
+ {
+     allocateArray( size );
+     doClear( );
+ }
+
+ 
+          //************INSERT METHOD*************//
+ public boolean insert( Anytype x )
+ {
+         // Insert x as active
+     int currentPos = findPos( x );
+     if( isActive( currentPos ) )
+         return false;
+     
+     //***********IGNORING DUPLICATE VALUES********************//
+     if(array[currentPos]!=null)
+    	 if(array[currentPos].element.equals(x))
+    	 return false;
+
+     array[ currentPos ] = new HashEntry<>( x, true );
+     theSize++;
+     
+     if( ++occupied > array.length / 2 )
+         rehash( );
+     
+     return true;
+ }
+
+ private void rehash( )
+ {
+     HashEntry<Anytype> [ ] oldArray = array;
+
+         // Create a new double-sized, empty table
+     allocateArray( 2 * oldArray.length );
+     occupied = 0;
+     theSize = 0;
+
+         // Copy table over
+     for( HashEntry<Anytype> entry : oldArray )
+         if( entry != null && entry.isActive )
+             insert( entry.element );
+ }
+
+ public int size( )
+ {
+     return theSize;
+ }
+ 
+ public int capacity( )
+ {
+     return array.length;
+ }
+
+ private int findPos( Anytype x )
+ {
+     int offset = 1;
+     int currentPos = myhash( x );
+     
+     while( array[ currentPos ] != null &&
+             !array[ currentPos ].element.equals( x ) )
+     {
+         currentPos += offset;  // Compute ith probe
+         if( currentPos >= array.length )
+             currentPos -= array.length;
+     }
+     
+     return currentPos;
+ }
+ 
+ //*******************Contains function************************//
+ public boolean contains( Anytype x )
+ {
+     int currentPos = findPos( x );
+     return isActive( currentPos );
+ }
+
+ private boolean isActive( int currentPos )
+ {
+     return array[ currentPos ] != null && array[ currentPos ].isActive;
+ }
+
+ public void makeEmpty( )
+ {
+     doClear( );
+ }
+
+ private void doClear( )
+ {
+     occupied = 0;
+     for( int i = 0; i < array.length; i++ )
+         array[ i ] = null;
+ }
+ 
+ private int myhash( Anytype x )
+ {
+     int hashVal = x.hashCode( );
+
+     hashVal %= array.length;
+     if( hashVal < 0 )
+         hashVal += array.length;
+
+     return hashVal; 
+ }
+ 
+ private static class HashEntry<AnyType>
+ {
+     public AnyType  element;   // the element
+     public boolean isActive;  // false if marked deleted
+
+     public HashEntry( AnyType e )
+     {
+         this( e, true );
+     }
+
+     public HashEntry( AnyType e, boolean i )
+     {
+         element  = e;
+         isActive = i;
+     }
+ }
+
+ private static final int DEFAULT_TABLE_SIZE = 101;
+
+ private HashEntry<Anytype> [ ] array; // The array of elements
+ private int occupied;                 // The number of occupied cells
+ private int theSize;                  // Current size
+
+ private void allocateArray( int arraySize )
+ {
+     array = new HashEntry[ nextPrime( arraySize ) ];
+ }
+
+ private static int nextPrime( int n )
+ {
+     if( n % 2 == 0 )
+         n++;
+
+     for( ; !isPrime( n ); n += 2 )
+         ;
+
+     return n;
+ }
+
+ private static boolean isPrime( int n )
+ {
+     if( n == 2 || n == 3 )
+         return true;
+
+     if( n == 1 || n % 2 == 0 )
+         return false;
+
+     for( int i = 3; i * i <= n; i += 2 )
+         if( n % i == 0 )
+             return false;
+
+     return true;
+ }
+ 
+ private void loadDict() {
+		BufferedReader reader = null;
+		try {
+			reader = new BufferedReader(new FileReader(pathname));
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		}
+	    Anytype line = null;
+	    System.out.println("Loading hash table with words provided in dictionary");
+	    try {
+			while ((line = (Anytype) reader.readLine()) != null) {
+			     System.out.println(line);
+			     this.insert(line);
+			 }
+		} catch (IOException e) {
+			e.printStackTrace();
+		}	
+ }
+ 
+ //******************Checking the Document and suggest*********************//
+ private void checkDoc() throws FileNotFoundException {
+
+	 System.out.println("Checking the document....");
+	 Scanner sc = new Scanner(new File(pathname2));
+		while(sc.hasNext()){
+		 String line = sc.nextLine();       
+		 String strippedInput = line.replaceAll("\\W", " ");
+		 strippedInput = strippedInput.replaceAll("  ", " ");
+		  String[] words = strippedInput.split(" ");
+		 for(int i=0; i<words.length;i++)
+			 this.verifyString((Anytype) words[i]);
+		}
+	 
+	 
+	}
+ 
+ 
+ 
+ private void verifyString(Anytype word) {
+String wrd = word.toString();
+wrd=wrd.toLowerCase();
+	 boolean tr = this.contains((Anytype) wrd);
+	if(tr){
+		return;
+	}
+	else
+		System.out.println("Misspelt word is : "+word);
+	System.out.println("Suggestions are : ");
+		this.matchFinder((Anytype) wrd);
+}
+
+private void matchFinder(Anytype word) {
+	//**********Compare with each string and find a match***************//
+	String r = (String) word;
+	
+	for(int i=0;i<array.length; i++){
+		if(array[i]!=null){
+		String s=(String) array[i].element;
+		
+		if(s.length()==r.length()){
+			int matchquotient=0;
+			for(int j=0;j<s.length();j++){
+				if(s.charAt(j)==r.charAt(j))
+					++matchquotient;
+			}
+		
+		if(matchquotient==s.length()-1)
+			System.out.println(s);
+		}
+	}
+	}
+}
+
+public static void main( String [ ] args ) throws FileNotFoundException
+ {
+     hashprgm <String> H = new hashprgm<>( );
+    
+     long startTime = System.currentTimeMillis( );
+     H.loadDict();
+     long endTime = System.currentTimeMillis( );
+     
+     System.out.println( "Elapsed time to load hash table: " + (endTime - startTime)/100 +"seconds" );
+     System.out.println( "Hash table size is: " + H.size( ) );
+     System.out.println( "Array size is: " + H.capacity( ) );
+     
+     H.checkDoc();
+    
+     
+ }
+
+
+
+
+}
